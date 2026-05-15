@@ -1,0 +1,89 @@
+prometheus:
+  prometheusSpec:
+    serviceMonitorSelectorNilUsesHelmValues: false
+    resources:
+      requests:
+        cpu: 200m
+        memory: 400Mi
+      limits:
+        cpu: 500m
+        memory: 800Mi
+
+grafana:
+  adminPassword: "admin123"
+  sidecar:
+    dashboards:
+      enabled: true
+      searchNamespace: ALL
+  dashboards:
+    default:
+      my-app-observability:
+        datasource: Prometheus
+        json: |
+          {
+            "annotations": {"list": []},
+            "editable": true,
+            "graphTooltip": 0,
+            "id": null,
+            "links": [],
+            "panels": [
+              {
+                "datasource": {"type": "prometheus", "uid": "prometheus"},
+                "fieldConfig": {"defaults": {"unit": "reqps"}, "overrides": []},
+                "gridPos": {"h": 8, "w": 12, "x": 0, "y": 0},
+                "id": 1,
+                "targets": [{"expr": "sum(rate(app_requests_total[1m]))", "legendFormat": "rps"}],
+                "title": "RPS (requests/sec)",
+                "type": "timeseries"
+              },
+              {
+                "datasource": {"type": "prometheus", "uid": "prometheus"},
+                "fieldConfig": {"defaults": {"unit": "s"}, "overrides": []},
+                "gridPos": {"h": 8, "w": 12, "x": 12, "y": 0},
+                "id": 2,
+                "targets": [{"expr": "histogram_quantile(0.95, sum(rate(app_request_latency_seconds_bucket[1m])) by (le))"}],
+                "title": "Latency P95 (sec)",
+                "type": "timeseries"
+              },
+              {
+                "datasource": {"type": "prometheus", "uid": "prometheus"},
+                "fieldConfig": {"defaults": {"unit": "short"}, "overrides": []},
+                "gridPos": {"h": 8, "w": 24, "x": 0, "y": 8},
+                "id": 3,
+                "targets": [{"expr": "sum(increase(app_requests_total[5m]))"}],
+                "title": "Total Requests (5m)",
+                "type": "stat"
+              }
+            ],
+            "schemaVersion": 39,
+            "tags": [],
+            "templating": {"list": []},
+            "time": {"from": "now-1h", "to": "now"},
+            "timepicker": {},
+            "timezone": "browser",
+            "title": "My App Observability",
+            "uid": "my-app-obs",
+            "version": 1
+          }
+  resources:
+    requests:
+      cpu: 100m
+      memory: 128Mi
+    limits:
+      cpu: 300m
+      memory: 256Mi
+
+alertmanager:
+  resources:
+    requests: { cpu: 50m, memory: 64Mi }
+    limits: { cpu: 100m, memory: 128Mi }
+
+kube-state-metrics:
+  resources:
+    requests: { cpu: 50m, memory: 64Mi }
+    limits: { cpu: 100m, memory: 128Mi }
+
+prometheus-node-exporter:
+  resources:
+    requests: { cpu: 50m, memory: 64Mi }
+    limits: { cpu: 100m, memory: 128Mi }

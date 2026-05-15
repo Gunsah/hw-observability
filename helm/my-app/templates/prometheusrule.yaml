@@ -1,0 +1,30 @@
+{{- if .Values.prometheusRule.enabled }}
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  name: {{ include "my-app.fullname" . }}
+  labels:
+    {{- include "my-app.labels" . | nindent 4 }}
+    release: monitoring
+spec:
+  groups:
+    - name: {{ include "my-app.fullname" . }}.rules
+      rules:
+        - alert: HighRequestRate
+          expr: rate(app_requests_total{job="{{ include "my-app.fullname" . }}"}[5m]) > 0.05
+          for: 1m
+          labels:
+            severity: warning
+          annotations:
+            summary: "Высокий запрос/сек"
+            description: "Скорость запросов превысила 0.05 rps."
+
+        - alert: AppDown
+          expr: up{job="{{ include "my-app.fullname" . }}"} == 0
+          for: 1m
+          labels:
+            severity: critical
+          annotations:
+            summary: "Приложение недоступно"
+            description: "Prometheus не получает метки от пода более 1 минуты."
+{{- end }}
